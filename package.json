@@ -1,9 +1,9 @@
 {
   "name": "online-quiz-application",
-  "version": "2.0.0",
-  "description": "Online Quiz Application with login, courses and analytics, built for the Foundation of DevOps subject",
+  "version": "3.0.0",
+  "description": "Online Quiz Application with login, courses, difficulty levels and analytics, built for the Foundation of DevOps subject",
   "scripts": {
-    "test": "node --test tests/quiz.test.js tests/analytics.test.js tests/auth.test.js"
+    "test": "node --test tests/quiz.test.js tests/analytics.test.js tests/auth.test.js tests/difficulty.test.js"
   },
   "license": "MIT"
 }

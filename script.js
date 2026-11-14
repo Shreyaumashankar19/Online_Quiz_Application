@@ -2,6 +2,8 @@
 let currentUser = null;
 let authMode = "login";
 let currentCourse = null;
+let currentLevel = "mixed";
+let questionTime = TIME_PER_QUESTION;
 let quizQuestions = [];
 let currentQuestionIndex = 0;
 let userAnswers = [];
@@ -20,80 +22,131 @@ const HISTORY_PREFIX = "quizHistory_";
 const MAX_HISTORY = 30;
 const LETTERS = ["A", "B", "C", "D"];
 
+const PAGE_TITLES = {
+  "dashboard-view": "Dashboard",
+  "courses-view": "Courses",
+  "analytics-view": "Analytics",
+  "leaderboard-view": "Leaderboard",
+  "profile-view": "My Profile"
+};
+
+const TIPS = [
+  "Read every option before choosing. Some answers look right but are not the best one.",
+  "Short and regular practice beats one long study session. Try one quiz a day!",
+  "Use the 50:50 lifeline on your hardest question, because you can only use it once per quiz.",
+  "After each quiz, open Review Answers. Learning from mistakes is the fastest way to improve.",
+  "Hard mode gives the most XP per correct answer. Try it once you score 80% on Medium.",
+  "If you are not sure, eliminate the options you know are wrong first."
+];
+
+// A small helper: $("my-id") is the same as document.getElementById("my-id")
+function $(id) {
+  return document.getElementById(id);
+}
+
 // ===== Get elements from the HTML page =====
-const toast = document.getElementById("toast");
-const confettiBox = document.getElementById("confetti-box");
+const toast = $("toast");
+const confettiBox = $("confetti-box");
 
-const authScreen = document.getElementById("auth-screen");
-const appScreen = document.getElementById("app-screen");
-const quizScreen = document.getElementById("quiz-screen");
-const resultScreen = document.getElementById("result-screen");
+const authScreen = $("auth-screen");
+const appScreen = $("app-screen");
+const quizScreen = $("quiz-screen");
+const resultScreen = $("result-screen");
 
-const tabLogin = document.getElementById("tab-login");
-const tabRegister = document.getElementById("tab-register");
-const nameField = document.getElementById("name-field");
-const fullNameInput = document.getElementById("full-name");
-const usernameInput = document.getElementById("username");
-const passwordInput = document.getElementById("password");
-const showPassword = document.getElementById("show-password");
-const authError = document.getElementById("auth-error");
-const authBtn = document.getElementById("auth-btn");
+const tabLogin = $("tab-login");
+const tabRegister = $("tab-register");
+const nameField = $("name-field");
+const fullNameInput = $("full-name");
+const usernameInput = $("username");
+const passwordInput = $("password");
+const showPassword = $("show-password");
+const authError = $("auth-error");
+const authBtn = $("auth-btn");
 
 const navButtons = document.querySelectorAll(".nav-btn");
 const viewElements = document.querySelectorAll(".view");
-const themeBtn = document.getElementById("theme-btn");
-const logoutBtn = document.getElementById("logout-btn");
+const contentArea = $("content-area");
+const pageTitle = $("page-title");
+const pageDate = $("page-date");
+const topXp = $("top-xp");
+const sideAvatar = $("side-avatar");
+const sideName = $("side-name");
+const sideLevel = $("side-level");
+const themeBtn = $("theme-btn");
+const logoutBtn = $("logout-btn");
 
-const welcomeText = document.getElementById("welcome-text");
-const statAttempts = document.getElementById("stat-attempts");
-const statBest = document.getElementById("stat-best");
-const statAverage = document.getElementById("stat-average");
-const statLast = document.getElementById("stat-last");
-const noHistory = document.getElementById("no-history");
-const historyList = document.getElementById("history-list");
-const gotoCoursesBtn = document.getElementById("goto-courses-btn");
-const randomBtn = document.getElementById("random-btn");
+const welcomeText = $("welcome-text");
+const heroSub = $("hero-sub");
+const levelRing = $("level-ring");
+const levelNumber = $("level-number");
+const levelText = $("level-text");
+const statAttempts = $("stat-attempts");
+const statBest = $("stat-best");
+const statAverage = $("stat-average");
+const statXp = $("stat-xp");
+const quickCourses = $("quick-courses");
+const noHistory = $("no-history");
+const historyList = $("history-list");
+const dashBarChart = $("dash-bar-chart");
+const tipText = $("tip-text");
+const tipBtn = $("tip-btn");
+const gotoCoursesBtn = $("goto-courses-btn");
+const randomBtn = $("random-btn");
 
-const courseGrid = document.getElementById("course-grid");
+const courseGrid = $("course-grid");
 
-const courseFilter = document.getElementById("course-filter");
-const barChart = document.getElementById("bar-chart");
-const lineChart = document.getElementById("line-chart");
-const doughnutChart = document.getElementById("doughnut-chart");
-const courseChart = document.getElementById("course-chart");
+const courseFilter = $("course-filter");
+const levelFilter = $("level-filter");
+const barChart = $("bar-chart");
+const lineChart = $("line-chart");
+const doughnutChart = $("doughnut-chart");
+const courseChart = $("course-chart");
+const levelChart = $("level-chart");
 
-const profileAvatar = document.getElementById("profile-avatar");
-const profileName = document.getElementById("profile-name");
-const profileUsername = document.getElementById("profile-username");
-const profileJoined = document.getElementById("profile-joined");
-const editName = document.getElementById("edit-name");
-const saveNameBtn = document.getElementById("save-name-btn");
-const badgeGrid = document.getElementById("badge-grid");
+const boardBody = $("board-body");
+const boardNote = $("board-note");
 
-const quitBtn = document.getElementById("quit-btn");
-const quizCourse = document.getElementById("quiz-course");
-const streakDisplay = document.getElementById("streak");
-const questionNumber = document.getElementById("question-number");
-const timerDisplay = document.getElementById("timer");
-const progressBar = document.getElementById("progress-bar");
-const questionText = document.getElementById("question-text");
+const profileAvatar = $("profile-avatar");
+const profileName = $("profile-name");
+const profileUsername = $("profile-username");
+const profileJoined = $("profile-joined");
+const profileLevel = $("profile-level");
+const editName = $("edit-name");
+const saveNameBtn = $("save-name-btn");
+const badgeGrid = $("badge-grid");
+
+const modal = $("modal");
+const modalSub = $("modal-sub");
+const difficultyGrid = $("difficulty-grid");
+const modalCancel = $("modal-cancel");
+
+const quitBtn = $("quit-btn");
+const quizCourse = $("quiz-course");
+const quizDifficulty = $("quiz-difficulty");
+const streakDisplay = $("streak");
+const questionNumber = $("question-number");
+const timerDisplay = $("timer");
+const timerBar = $("timer-bar");
+const progressBar = $("progress-bar");
+const questionText = $("question-text");
 const optionButtons = document.querySelectorAll(".option-btn");
-const fiftyBtn = document.getElementById("fifty-btn");
-const nextBtn = document.getElementById("next-btn");
+const fiftyBtn = $("fifty-btn");
+const nextBtn = $("next-btn");
 
-const resultCourse = document.getElementById("result-course");
-const resultMessage = document.getElementById("result-message");
-const percentageDisplay = document.getElementById("percentage");
-const finalScoreDisplay = document.getElementById("final-score");
-const totalQuestionsDisplay = document.getElementById("total-questions");
-const correctCountDisplay = document.getElementById("correct-count");
-const wrongCountDisplay = document.getElementById("wrong-count");
-const skippedCountDisplay = document.getElementById("skipped-count");
+const resultCourse = $("result-course");
+const resultMessage = $("result-message");
+const percentageDisplay = $("percentage");
+const finalScoreDisplay = $("final-score");
+const totalQuestionsDisplay = $("total-questions");
+const correctCountDisplay = $("correct-count");
+const wrongCountDisplay = $("wrong-count");
+const skippedCountDisplay = $("skipped-count");
+const xpEarnedDisplay = $("xp-earned");
 const scoreCircle = document.querySelector(".score-circle");
-const restartBtn = document.getElementById("restart-btn");
-const reviewBtn = document.getElementById("review-btn");
-const homeBtn = document.getElementById("home-btn");
-const reviewList = document.getElementById("review-list");
+const restartBtn = $("restart-btn");
+const reviewBtn = $("review-btn");
+const homeBtn = $("home-btn");
+const reviewList = $("review-list");
 
 // ===== Saving and loading data in the browser =====
 // If the browser blocks storage, data is kept in memory until the page is closed.
@@ -132,8 +185,12 @@ function storageRemove(key) {
   }
 }
 
+function loadHistoryFor(username) {
+  return storageRead(HISTORY_PREFIX + username, []);
+}
+
 function loadHistory() {
-  return storageRead(HISTORY_PREFIX + currentUser, []);
+  return loadHistoryFor(currentUser);
 }
 
 function saveHistory(historyData) {
@@ -152,17 +209,18 @@ function showToast(message) {
   clearTimeout(toastTimeoutId);
   toastTimeoutId = setTimeout(function () {
     toast.classList.remove("show");
-  }, 2500);
+  }, 2800);
 }
 
 function animateNumber(element, target, suffix) {
+  clearInterval(element.animationId);
   const steps = 20;
   let step = 0;
-  const interval = setInterval(function () {
+  element.animationId = setInterval(function () {
     step++;
     element.textContent = Math.round((target * step) / steps) + suffix;
     if (step >= steps) {
-      clearInterval(interval);
+      clearInterval(element.animationId);
     }
   }, 30);
 }
@@ -175,9 +233,17 @@ function courseLabel(courseId) {
   return "Quiz";
 }
 
+function levelLabel(levelId) {
+  const info = getDifficultyInfo(levelId || "mixed");
+  if (info) {
+    return info.icon + " " + info.label;
+  }
+  return "";
+}
+
 function launchConfetti() {
   const colors = ["#3b82f6", "#6c5ce7", "#a855f7", "#16a34a", "#f59e0b", "#ef4444"];
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 70; i++) {
     const piece = document.createElement("span");
     piece.className = "confetti-piece";
     piece.style.left = Math.random() * 100 + "%";
@@ -209,6 +275,7 @@ function showScreen(screenToShow) {
   quizScreen.classList.add("hidden");
   resultScreen.classList.add("hidden");
   screenToShow.classList.remove("hidden");
+  window.scrollTo(0, 0);
 }
 
 // ===== Login and Register =====
@@ -271,6 +338,7 @@ function handleAuth() {
 
 function logout() {
   stopTimers();
+  closeModal();
   currentUser = null;
   storageRemove(SESSION_KEY);
   setAuthMode("login");
@@ -278,12 +346,23 @@ function logout() {
   showToast("You have logged out.");
 }
 
-// ===== Pages inside the app (Dashboard, Courses, Analytics, Profile) =====
+// ===== Pages inside the app =====
+function updateSidebarAndTopbar() {
+  const record = getUserRecord();
+  const totalXP = getTotalXP(loadHistory());
+  const levelInfo = getLevelInfo(totalXP);
+
+  sideAvatar.textContent = getInitial(record.fullName);
+  sideName.textContent = record.fullName;
+  sideLevel.textContent = "Level " + levelInfo.level;
+  topXp.textContent = totalXP;
+}
+
 function showView(viewId) {
   viewElements.forEach(function (view) {
     view.classList.add("hidden");
   });
-  document.getElementById(viewId).classList.remove("hidden");
+  $(viewId).classList.remove("hidden");
 
   navButtons.forEach(function (button) {
     if (button.dataset.view === viewId) {
@@ -293,30 +372,49 @@ function showView(viewId) {
     }
   });
 
+  pageTitle.textContent = PAGE_TITLES[viewId];
+  updateSidebarAndTopbar();
+  contentArea.scrollTop = 0;
+
   if (viewId === "dashboard-view") {
     renderDashboard();
   } else if (viewId === "courses-view") {
     renderCourses();
   } else if (viewId === "analytics-view") {
     renderAnalytics();
+  } else if (viewId === "leaderboard-view") {
+    renderLeaderboard();
   } else if (viewId === "profile-view") {
     renderProfile();
   }
 }
 
 // ===== Dashboard page =====
-function renderDashboard() {
-  const record = getUserRecord();
-  welcomeText.textContent = "Welcome back, " + record.fullName + " 👋";
+function showTip() {
+  tipText.textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+}
 
-  const historyData = loadHistory();
-  const stats = calculateStats(historyData);
+function renderQuickCourses(historyData) {
+  quickCourses.innerHTML = "";
+  getCourses().forEach(function (course) {
+    const stats = calculateStats(filterHistory(historyData, course.id));
+    const info = stats.attempts > 0 ? "Best: " + stats.bestPercentage + "%" : "Not started";
 
-  animateNumber(statAttempts, stats.attempts, "");
-  animateNumber(statBest, stats.bestPercentage, "%");
-  animateNumber(statAverage, stats.averagePercentage, "%");
-  animateNumber(statLast, stats.lastPercentage, "%");
+    const button = document.createElement("button");
+    button.className = "quick-course";
+    button.style.setProperty("--accent", course.accent);
+    // Course data comes from our own file, so it is safe to use here
+    button.innerHTML =
+      '<span class="quick-icon">' + course.icon + "</span>" +
+      '<span class="quick-info"><strong>' + course.name + "</strong><small>" + info + "</small></span>";
+    button.addEventListener("click", function () {
+      openDifficultyModal(course.id);
+    });
+    quickCourses.appendChild(button);
+  });
+}
 
+function renderRecentActivity(historyData) {
   historyList.innerHTML = "";
   if (historyData.length === 0) {
     noHistory.classList.remove("hidden");
@@ -327,11 +425,11 @@ function renderDashboard() {
   noHistory.classList.add("hidden");
   historyList.classList.remove("hidden");
 
-  historyData.slice().reverse().slice(0, 5).forEach(function (attempt) {
+  historyData.slice().reverse().slice(0, 6).forEach(function (attempt) {
     const item = document.createElement("li");
 
     const info = document.createElement("span");
-    info.textContent = courseLabel(attempt.courseId) + "  •  " + attempt.date + "  •  " + attempt.score + "/" + attempt.total;
+    info.textContent = courseLabel(attempt.courseId) + " • " + levelLabel(attempt.difficulty) + " • " + attempt.score + "/" + attempt.total;
 
     const badge = document.createElement("span");
     badge.className = "history-badge";
@@ -343,6 +441,38 @@ function renderDashboard() {
   });
 }
 
+function renderDashboard() {
+  const record = getUserRecord();
+  const historyData = loadHistory();
+  const stats = calculateStats(historyData);
+  const totalXP = getTotalXP(historyData);
+  const levelInfo = getLevelInfo(totalXP);
+
+  const firstName = record.fullName.split(" ")[0];
+  welcomeText.textContent = getGreeting(new Date().getHours()) + ", " + firstName + " 👋";
+
+  if (stats.attempts === 0) {
+    heroSub.textContent = "Take your first quiz to start earning XP and badges.";
+  } else {
+    const word = stats.attempts === 1 ? " quiz" : " quizzes";
+    heroSub.textContent = "You have completed " + stats.attempts + word + ". Keep your streak going!";
+  }
+
+  levelNumber.textContent = levelInfo.level;
+  levelText.textContent = levelInfo.xpInLevel + " / " + levelInfo.xpForNext + " XP to next level";
+  levelRing.style.setProperty("--percent", levelInfo.progress + "%");
+
+  animateNumber(statAttempts, stats.attempts, "");
+  animateNumber(statBest, stats.bestPercentage, "%");
+  animateNumber(statAverage, stats.averagePercentage, "%");
+  animateNumber(statXp, totalXP, "");
+
+  renderQuickCourses(historyData);
+  renderRecentActivity(historyData);
+  renderBarChart(historyData, dashBarChart);
+  showTip();
+}
+
 // ===== Courses page =====
 function renderCourses() {
   courseGrid.innerHTML = "";
@@ -350,43 +480,100 @@ function renderCourses() {
 
   getCourses().forEach(function (course) {
     const stats = calculateStats(filterHistory(historyData, course.id));
+    const easyCount = getQuestionsByDifficulty(course.id, "easy").length;
+    const mediumCount = getQuestionsByDifficulty(course.id, "medium").length;
+    const hardCount = getQuestionsByDifficulty(course.id, "hard").length;
+
+    let meta = "Not attempted yet";
+    if (stats.attempts > 0) {
+      meta = stats.attempts + " attempt(s) • Best: " + stats.bestPercentage + "%";
+    }
 
     const card = document.createElement("button");
     card.className = "course-card";
-
-    let meta = course.questions.length + " questions • Not attempted yet";
-    if (stats.attempts > 0) {
-      meta = course.questions.length + " questions • Best: " + stats.bestPercentage + "%";
-    }
+    card.style.setProperty("--accent", course.accent);
 
     // Course data comes from our own file, so it is safe to use here
     card.innerHTML =
       '<span class="course-icon">' + course.icon + "</span>" +
       '<span class="course-name">' + course.name + "</span>" +
       '<span class="course-desc">' + course.description + "</span>" +
+      '<span class="course-chips">' +
+        '<span class="chip">🟢 ' + easyCount + "</span>" +
+        '<span class="chip">🟡 ' + mediumCount + "</span>" +
+        '<span class="chip">🔴 ' + hardCount + "</span>" +
+      "</span>" +
       '<span class="course-meta">' + meta + "</span>" +
-      '<span class="course-go">Start Quiz →</span>';
+      '<span class="course-go">Choose difficulty →</span>';
 
     card.addEventListener("click", function () {
-      startQuiz(course.id);
+      openDifficultyModal(course.id);
     });
     courseGrid.appendChild(card);
   });
 }
 
+// ===== Difficulty pop-up =====
+function openDifficultyModal(courseId) {
+  const course = getCourseById(courseId);
+  if (!course) {
+    return;
+  }
+
+  modalSub.textContent = course.icon + " " + course.name;
+  difficultyGrid.innerHTML = "";
+
+  getDifficultyList().forEach(function (info) {
+    const available = Math.min(info.count, getQuestionsByDifficulty(courseId, info.id).length);
+
+    const button = document.createElement("button");
+    button.className = "difficulty-btn";
+    // Difficulty data comes from our own file, so it is safe to use here
+    button.innerHTML =
+      '<span class="difficulty-icon">' + info.icon + "</span>" +
+      '<span class="difficulty-name">' + info.label + "</span>" +
+      '<span class="difficulty-info">' + available + " questions • " + info.time + "s each</span>";
+
+    button.addEventListener("click", function () {
+      closeModal();
+      startQuiz(courseId, info.id);
+    });
+    difficultyGrid.appendChild(button);
+  });
+
+  modal.classList.remove("hidden");
+}
+
+function closeModal() {
+  modal.classList.add("hidden");
+}
+
 // ===== Analytics page =====
-function populateCourseFilter() {
+function populateFilters() {
   courseFilter.innerHTML = "";
-  const allOption = document.createElement("option");
-  allOption.value = "all";
-  allOption.textContent = "All Courses";
-  courseFilter.appendChild(allOption);
+  const allCourses = document.createElement("option");
+  allCourses.value = "all";
+  allCourses.textContent = "All Courses";
+  courseFilter.appendChild(allCourses);
 
   getCourses().forEach(function (course) {
     const option = document.createElement("option");
     option.value = course.id;
     option.textContent = course.icon + " " + course.name;
     courseFilter.appendChild(option);
+  });
+
+  levelFilter.innerHTML = "";
+  const allLevels = document.createElement("option");
+  allLevels.value = "all";
+  allLevels.textContent = "All Difficulties";
+  levelFilter.appendChild(allLevels);
+
+  getDifficultyList().forEach(function (info) {
+    const option = document.createElement("option");
+    option.value = info.id;
+    option.textContent = info.icon + " " + info.label;
+    levelFilter.appendChild(option);
   });
 }
 
@@ -402,11 +589,11 @@ function svgElement(name, attributes) {
   return element;
 }
 
-// Chart 1: Bar chart of the last 8 attempts
-function renderBarChart(historyData) {
-  barChart.innerHTML = "";
+// Bar chart of the last 8 attempts (used on the dashboard and the analytics page)
+function renderBarChart(historyData, container) {
+  container.innerHTML = "";
   if (historyData.length === 0) {
-    showEmptyChart(barChart);
+    showEmptyChart(container);
     return;
   }
 
@@ -416,7 +603,7 @@ function renderBarChart(historyData) {
   lastEight.forEach(function (attempt, index) {
     const column = document.createElement("div");
     column.className = "bar-col";
-    column.title = courseLabel(attempt.courseId) + " • " + attempt.date + " • " + attempt.score + "/" + attempt.total;
+    column.title = courseLabel(attempt.courseId) + " • " + levelLabel(attempt.difficulty) + " • " + attempt.date + " • " + attempt.score + "/" + attempt.total;
 
     const value = document.createElement("span");
     value.className = "bar-value";
@@ -439,16 +626,16 @@ function renderBarChart(historyData) {
     column.appendChild(value);
     column.appendChild(bar);
     column.appendChild(label);
-    barChart.appendChild(column);
+    container.appendChild(column);
 
     // Set the real height after a moment so the bar grows with animation
     setTimeout(function () {
-      bar.style.height = Math.max(4, attempt.percentage * 1.2) + "px";
+      bar.style.height = Math.max(4, attempt.percentage * 1.3) + "px";
     }, 50);
   });
 }
 
-// Chart 2: Line chart of the score trend
+// Line chart of the score trend
 function renderLineChart(historyData) {
   lineChart.innerHTML = "";
   if (historyData.length === 0) {
@@ -501,7 +688,7 @@ function renderLineChart(historyData) {
   lineChart.appendChild(svg);
 }
 
-// Chart 3: Doughnut chart of correct / wrong / skipped answers
+// Doughnut chart of correct / wrong / skipped answers
 function renderDoughnut(historyData) {
   doughnutChart.innerHTML = "";
   const totals = getTotals(historyData);
@@ -541,15 +728,20 @@ function renderDoughnut(historyData) {
   doughnutChart.appendChild(wrapper);
 }
 
-// Chart 4: Horizontal bars with the average score of each course
-function renderCourseChart(allHistory) {
-  courseChart.innerHTML = "";
-  if (allHistory.length === 0) {
-    showEmptyChart(courseChart);
+// Horizontal bars (used for the course chart and the difficulty chart)
+// items = [{ name, attempts, average }]
+function renderHorizontalBars(container, items) {
+  container.innerHTML = "";
+
+  const totalAttempts = items.reduce(function (sum, item) {
+    return sum + item.attempts;
+  }, 0);
+  if (totalAttempts === 0) {
+    showEmptyChart(container);
     return;
   }
 
-  getCourseStats(allHistory, getCourses()).forEach(function (item) {
+  items.forEach(function (item) {
     const row = document.createElement("div");
     row.className = "hbar-row";
 
@@ -571,7 +763,7 @@ function renderCourseChart(allHistory) {
     row.appendChild(label);
     row.appendChild(track);
     row.appendChild(value);
-    courseChart.appendChild(row);
+    container.appendChild(row);
 
     setTimeout(function () {
       fill.style.width = item.average + "%";
@@ -581,27 +773,80 @@ function renderCourseChart(allHistory) {
 
 function renderAnalytics() {
   const allHistory = loadHistory();
-  const filtered = filterHistory(allHistory, courseFilter.value || "all");
+  const chosenCourse = courseFilter.value || "all";
+  const chosenLevel = levelFilter.value || "all";
 
-  renderBarChart(filtered);
+  const byCourse = filterHistory(allHistory, chosenCourse);
+  const filtered = filterByDifficulty(byCourse, chosenLevel);
+
+  renderBarChart(filtered, barChart);
   renderLineChart(filtered);
   renderDoughnut(filtered);
-  renderCourseChart(allHistory);
+  renderHorizontalBars(courseChart, getCourseStats(filterByDifficulty(allHistory, chosenLevel), getCourses()));
+  renderHorizontalBars(levelChart, getDifficultyStats(byCourse));
+}
+
+// ===== Leaderboard page =====
+function renderLeaderboard() {
+  const users = storageRead(USERS_KEY, {});
+  const entries = Object.keys(users).map(function (username) {
+    return {
+      username: username,
+      fullName: users[username].fullName,
+      history: loadHistoryFor(username)
+    };
+  });
+
+  const rows = buildLeaderboard(entries);
+  const medals = ["🥇", "🥈", "🥉"];
+  boardBody.innerHTML = "";
+
+  rows.forEach(function (row, index) {
+    const tr = document.createElement("tr");
+    const isMe = row.username === currentUser;
+    if (isMe) {
+      tr.className = "me";
+    }
+
+    const cells = [
+      medals[index] || String(index + 1),
+      row.fullName + (isMe ? " (You)" : ""),
+      "Lv " + row.level,
+      row.attempts,
+      row.best + "%",
+      row.average + "%",
+      row.xp + " XP"
+    ];
+
+    cells.forEach(function (value) {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    });
+    boardBody.appendChild(tr);
+  });
+
+  boardNote.textContent = "Ranked by XP. Players shown: " + rows.length + " (accounts saved in this browser).";
 }
 
 // ===== Profile page =====
 function renderProfile() {
   const record = getUserRecord();
+  const historyData = loadHistory();
+  const totalXP = getTotalXP(historyData);
+
   profileAvatar.textContent = getInitial(record.fullName);
   profileName.textContent = record.fullName;
   profileUsername.textContent = "@" + currentUser;
   profileJoined.textContent = "Member since " + record.joined;
+  profileLevel.textContent = "Level " + getLevelInfo(totalXP).level + " • " + totalXP + " XP";
   editName.value = record.fullName;
 
   badgeGrid.innerHTML = "";
-  getBadges(loadHistory()).forEach(function (badge) {
+  getBadges(historyData).forEach(function (badge) {
     const box = document.createElement("div");
     box.className = "badge " + (badge.earned ? "earned" : "locked");
+    // Badge data comes from our own file, so it is safe to use here
     box.innerHTML =
       '<div class="badge-icon">' + badge.icon + "</div>" +
       '<div class="badge-name">' + badge.title + "</div>" +
@@ -619,6 +864,7 @@ function saveNewName() {
   const users = storageRead(USERS_KEY, {});
   users[currentUser].fullName = newName;
   storageWrite(USERS_KEY, users);
+  updateSidebarAndTopbar();
   renderProfile();
   showToast("Name updated!");
 }
@@ -633,16 +879,20 @@ function stopTimers() {
 
 function updateTimerDisplay() {
   timerDisplay.textContent = "⏱ " + timeLeft;
+  timerBar.style.width = (timeLeft / questionTime) * 100 + "%";
+
   if (timeLeft <= 5) {
     timerDisplay.classList.add("timer-warning");
+    timerBar.classList.add("warning");
   } else {
     timerDisplay.classList.remove("timer-warning");
+    timerBar.classList.remove("warning");
   }
 }
 
 function startTimer() {
   stopTimers();
-  timeLeft = TIME_PER_QUESTION;
+  timeLeft = questionTime;
   updateTimerDisplay();
 
   timerId = setInterval(function () {
@@ -688,19 +938,27 @@ function updateStreakDisplay() {
   }
 }
 
-function startQuiz(courseId) {
+function startQuiz(courseId, levelId) {
   currentCourse = getCourseById(courseId);
-  if (!currentCourse) {
+  if (!currentCourse || !getDifficultyInfo(levelId)) {
     return;
   }
 
-  quizQuestions = shuffleArray(getQuestions(courseId), Math.random);
+  currentLevel = levelId;
+  questionTime = getTimeForDifficulty(levelId);
+  quizQuestions = selectQuestions(courseId, levelId, Math.random);
+  if (quizQuestions.length === 0) {
+    showToast("No questions available for this choice.");
+    return;
+  }
+
   currentQuestionIndex = 0;
   userAnswers = [];
   streak = 0;
   lifelineUsed = false;
 
   quizCourse.textContent = currentCourse.icon + " " + currentCourse.name;
+  quizDifficulty.textContent = levelLabel(levelId);
   updateStreakDisplay();
   reviewList.classList.add("hidden");
   reviewBtn.textContent = "Review Answers";
@@ -848,13 +1106,15 @@ function showResult() {
   const skipped = countSkipped(userAnswers, total);
   const wrong = total - score - skipped; // answered but incorrect
   const percentage = calculatePercentage(score, total);
+  const xpEarned = calculateXP(score, currentLevel);
 
-  resultCourse.textContent = currentCourse.icon + " " + currentCourse.name;
+  resultCourse.textContent = currentCourse.icon + " " + currentCourse.name + " • " + levelLabel(currentLevel);
   finalScoreDisplay.textContent = score;
   totalQuestionsDisplay.textContent = total;
   correctCountDisplay.textContent = score;
   wrongCountDisplay.textContent = wrong;
   skippedCountDisplay.textContent = skipped;
+  xpEarnedDisplay.textContent = xpEarned;
   percentageDisplay.textContent = percentage + "%";
   resultMessage.textContent = getResultMessage(percentage);
   scoreCircle.style.setProperty("--percent", percentage + "%");
@@ -864,15 +1124,18 @@ function showResult() {
   const attempt = {
     date: new Date().toLocaleDateString(),
     courseId: currentCourse.id,
+    difficulty: currentLevel,
     score: score,
     total: total,
     percentage: percentage,
     correct: score,
     wrong: wrong,
-    skipped: skipped
+    skipped: skipped,
+    xp: xpEarned
   };
 
   const oldHistory = loadHistory();
+  const oldLevel = getLevelInfo(getTotalXP(oldHistory)).level;
   const earnedBefore = getBadges(oldHistory).filter(function (badge) {
     return badge.earned;
   }).map(function (badge) {
@@ -882,6 +1145,7 @@ function showResult() {
   const newHistory = addAttempt(oldHistory, attempt, MAX_HISTORY);
   saveHistory(newHistory);
 
+  const newLevel = getLevelInfo(getTotalXP(newHistory)).level;
   const newBadges = getBadges(newHistory).filter(function (badge) {
     return badge.earned && earnedBefore.indexOf(badge.id) === -1;
   });
@@ -891,10 +1155,15 @@ function showResult() {
   if (percentage >= 80) {
     launchConfetti();
   }
+  if (newLevel > oldLevel) {
+    setTimeout(function () {
+      showToast("🎉 Level up! You are now Level " + newLevel);
+    }, 1000);
+  }
   if (newBadges.length > 0) {
     setTimeout(function () {
       showToast("🏅 New badge unlocked: " + newBadges[0].title);
-    }, 1200);
+    }, newLevel > oldLevel ? 4000 : 1000);
   }
 }
 
@@ -935,20 +1204,32 @@ themeBtn.addEventListener("click", function () {
 
 logoutBtn.addEventListener("click", logout);
 gotoCoursesBtn.addEventListener("click", function () { showView("courses-view"); });
+tipBtn.addEventListener("click", showTip);
+
 randomBtn.addEventListener("click", function () {
   const allCourses = getCourses();
+  const allLevels = getDifficultyList();
   const randomCourse = allCourses[Math.floor(Math.random() * allCourses.length)];
-  showToast("Random pick: " + randomCourse.name);
-  startQuiz(randomCourse.id);
+  const randomLevel = allLevels[Math.floor(Math.random() * allLevels.length)];
+  showToast("Random pick: " + randomCourse.name + " (" + randomLevel.label + ")");
+  startQuiz(randomCourse.id, randomLevel.id);
 });
 
 courseFilter.addEventListener("change", renderAnalytics);
+levelFilter.addEventListener("change", renderAnalytics);
 saveNameBtn.addEventListener("click", saveNewName);
+
+modalCancel.addEventListener("click", closeModal);
+modal.addEventListener("click", function (event) {
+  if (event.target === modal) {
+    closeModal(); // clicking the dark background closes the pop-up
+  }
+});
 
 quitBtn.addEventListener("click", quitQuiz);
 fiftyBtn.addEventListener("click", useLifeline);
 nextBtn.addEventListener("click", goToNextQuestion);
-restartBtn.addEventListener("click", function () { startQuiz(currentCourse.id); });
+restartBtn.addEventListener("click", function () { startQuiz(currentCourse.id, currentLevel); });
 homeBtn.addEventListener("click", goToDashboard);
 reviewBtn.addEventListener("click", function () {
   reviewList.classList.toggle("hidden");
@@ -965,8 +1246,13 @@ optionButtons.forEach(function (button) {
   });
 });
 
-// Keyboard shortcuts during the quiz
+// Keyboard shortcuts
 document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape" && !modal.classList.contains("hidden")) {
+    closeModal();
+    return;
+  }
+
   if (quizScreen.classList.contains("hidden")) {
     return;
   }
@@ -987,8 +1273,14 @@ document.addEventListener("keydown", function (event) {
 // ===== Start the app =====
 function init() {
   applyTheme(storageRead(THEME_KEY, "light"));
-  populateCourseFilter();
+  populateFilters();
   setAuthMode("login");
+  pageDate.textContent = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
 
   const sessionUser = storageRead(SESSION_KEY, null);
   const users = storageRead(USERS_KEY, {});
