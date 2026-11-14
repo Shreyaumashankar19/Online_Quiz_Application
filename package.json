@@ -1,0 +1,9 @@
+{
+  "name": "online-quiz-application",
+  "version": "1.0.0",
+  "description": "A simple Online Quiz Application built for the Foundation of DevOps subject",
+  "scripts": {
+    "test": "node --test tests/quiz.test.js"
+  },
+  "license": "MIT"
+}
