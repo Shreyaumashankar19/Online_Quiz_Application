@@ -2,99 +2,126 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
-  TIME_PER_QUESTION,
-  getQuestions,
-  getTotalQuestions,
-  isCorrectAnswer,
-  calculateScore,
-  calculatePercentage,
-  getResultMessage,
-  tick,
-  isTimeUp
+  getCourses,
+  countSkipped,
+  addAttempt,
+  calculateStats,
+  getInitial,
+  filterHistory,
+  getTotals,
+  getCourseStats,
+  getBadges
 } = require("../quizLogic.js");
 
-// ===== Question loading =====
-test("there are at least 10 questions", () => {
-  assert.ok(getQuestions().length >= 10);
-  assert.equal(getTotalQuestions(), getQuestions().length);
+// ===== Skipped questions =====
+test("countSkipped counts null answers", () => {
+  assert.equal(countSkipped([0, null, 2, null], 4), 2);
 });
 
-test("every question has text, 4 options and a valid correct answer", () => {
-  getQuestions().forEach((q) => {
-    assert.ok(q.question.length > 0);
-    assert.equal(q.options.length, 4);
-    assert.ok(q.correctIndex >= 0 && q.correctIndex <= 3);
-  });
+test("countSkipped counts missing answers and is 0 when all are answered", () => {
+  assert.equal(countSkipped([0, 1, 2, 3], 4), 0);
+  assert.equal(countSkipped([0, 1], 4), 2);
 });
 
-// ===== Answer validation =====
-test("correct answer is accepted", () => {
-  const q = getQuestions()[0];
-  assert.equal(isCorrectAnswer(q, q.correctIndex), true);
+// ===== History =====
+test("addAttempt adds a new attempt", () => {
+  const result = addAttempt([], { percentage: 50 }, 10);
+  assert.equal(result.length, 1);
 });
 
-test("wrong answer is rejected", () => {
-  const q = getQuestions()[0];
-  const wrongIndex = (q.correctIndex + 1) % 4;
-  assert.equal(isCorrectAnswer(q, wrongIndex), false);
+test("addAttempt keeps only the latest attempts", () => {
+  let historyData = [];
+  for (let i = 1; i <= 12; i++) {
+    historyData = addAttempt(historyData, { percentage: i }, 10);
+  }
+  assert.equal(historyData.length, 10);
+  assert.equal(historyData[0].percentage, 3);
+  assert.equal(historyData[9].percentage, 12);
 });
 
-// ===== Score calculation =====
-test("score is full when all answers are correct", () => {
-  const list = getQuestions();
-  const answers = list.map((q) => q.correctIndex);
-  assert.equal(calculateScore(list, answers), list.length);
+// ===== Dashboard statistics =====
+test("calculateStats returns zeros for empty history", () => {
+  const stats = calculateStats([]);
+  assert.equal(stats.attempts, 0);
+  assert.equal(stats.bestPercentage, 0);
+  assert.equal(stats.averagePercentage, 0);
+  assert.equal(stats.lastPercentage, 0);
 });
 
-test("score is 0 when all answers are wrong", () => {
-  const list = getQuestions();
-  const answers = list.map((q) => (q.correctIndex + 1) % 4);
-  assert.equal(calculateScore(list, answers), 0);
+test("calculateStats calculates best, average and last", () => {
+  const historyData = [{ percentage: 40 }, { percentage: 80 }, { percentage: 60 }];
+  const stats = calculateStats(historyData);
+  assert.equal(stats.attempts, 3);
+  assert.equal(stats.bestPercentage, 80);
+  assert.equal(stats.averagePercentage, 60);
+  assert.equal(stats.lastPercentage, 60);
 });
 
-test("unanswered questions (null) give no score", () => {
-  const list = getQuestions();
-  const answers = list.map(() => null);
-  assert.equal(calculateScore(list, answers), 0);
+// ===== Profile =====
+test("getInitial returns the first letter in capitals", () => {
+  assert.equal(getInitial("rahul"), "R");
+  assert.equal(getInitial("  anita"), "A");
 });
 
-test("score is correct for a mix of answers", () => {
-  const list = getQuestions();
-  const answers = list.map((q, i) => (i < 3 ? q.correctIndex : null));
-  assert.equal(calculateScore(list, answers), 3);
+test("getInitial returns ? for an empty name", () => {
+  assert.equal(getInitial(""), "?");
+  assert.equal(getInitial("   "), "?");
 });
 
-// ===== Percentage calculation =====
-test("percentage is calculated correctly", () => {
-  assert.equal(calculatePercentage(8, 10), 80);
-  assert.equal(calculatePercentage(10, 10), 100);
-  assert.equal(calculatePercentage(0, 10), 0);
-  assert.equal(calculatePercentage(1, 3), 33);
+// ===== Course filter =====
+test("filterHistory with 'all' returns everything", () => {
+  const historyData = [{ courseId: "cs" }, { courseId: "gk" }];
+  assert.equal(filterHistory(historyData, "all").length, 2);
 });
 
-test("percentage is 0 when total is 0", () => {
-  assert.equal(calculatePercentage(0, 0), 0);
+test("filterHistory keeps only the chosen course", () => {
+  const historyData = [{ courseId: "cs" }, { courseId: "gk" }, { courseId: "cs" }];
+  assert.equal(filterHistory(historyData, "cs").length, 2);
+  assert.equal(filterHistory(historyData, "web").length, 0);
 });
 
-// ===== Result message =====
-test("result message matches the percentage", () => {
-  assert.equal(getResultMessage(90), "Excellent! You are a quiz champion!");
-  assert.equal(getResultMessage(60), "Good job! Keep practicing.");
-  assert.equal(getResultMessage(20), "Keep learning and try again!");
+// ===== Chart data =====
+test("getTotals adds up correct, wrong and skipped", () => {
+  const historyData = [
+    { correct: 5, wrong: 2, skipped: 1 },
+    { correct: 3, wrong: 4, skipped: 1 }
+  ];
+  const totals = getTotals(historyData);
+  assert.equal(totals.correct, 8);
+  assert.equal(totals.wrong, 6);
+  assert.equal(totals.skipped, 2);
 });
 
-// ===== Timer logic =====
-test("timer starts at 15 seconds", () => {
-  assert.equal(TIME_PER_QUESTION, 15);
+test("getCourseStats gives the average of every course", () => {
+  const historyData = [
+    { courseId: "cs", percentage: 50 },
+    { courseId: "cs", percentage: 100 },
+    { courseId: "gk", percentage: 40 }
+  ];
+  const stats = getCourseStats(historyData, getCourses());
+  assert.equal(stats.length, getCourses().length);
+  assert.equal(stats[0].courseId, "cs");
+  assert.equal(stats[0].average, 75);
+  assert.equal(stats[0].attempts, 2);
+  assert.equal(stats[1].average, 40);
+  assert.equal(stats[2].average, 0);
 });
 
-test("timer goes down by 1 and never below 0", () => {
-  assert.equal(tick(10), 9);
-  assert.equal(tick(1), 0);
-  assert.equal(tick(0), 0);
+// ===== Badges =====
+test("no badge is earned with an empty history", () => {
+  const earned = getBadges([]).filter((badge) => badge.earned);
+  assert.equal(earned.length, 0);
 });
 
-test("isTimeUp is true only when time is 0", () => {
-  assert.equal(isTimeUp(0), true);
-  assert.equal(isTimeUp(5), false);
+test("badges are earned after good attempts in 2 courses", () => {
+  const historyData = [
+    { courseId: "cs", percentage: 100 },
+    { courseId: "gk", percentage: 50 }
+  ];
+  const earnedIds = getBadges(historyData).filter((b) => b.earned).map((b) => b.id);
+  assert.ok(earnedIds.includes("first"));
+  assert.ok(earnedIds.includes("high"));
+  assert.ok(earnedIds.includes("perfect"));
+  assert.ok(earnedIds.includes("explorer"));
+  assert.equal(earnedIds.includes("five"), false);
 });

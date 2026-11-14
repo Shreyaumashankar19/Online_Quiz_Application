@@ -3,42 +3,171 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Online Quiz Application</title>
+  <title>QuizMaster - Online Quiz Application</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+  <div id="toast" class="toast"></div>
+  <div id="confetti-box" class="confetti-box"></div>
+
   <div class="container">
 
-    <!-- ========== SCREEN 1: HOME ========== -->
-    <section id="home-screen" class="screen card">
+    <!-- ========== SCREEN 1: LOGIN / REGISTER ========== -->
+    <section id="auth-screen" class="screen card narrow">
       <div class="logo">🎓</div>
-      <h1>Online Quiz Application</h1>
-      <p class="subtitle">Test your Computer Science and General Knowledge</p>
+      <h1>QuizMaster</h1>
+      <p class="subtitle">Login or create an account to start learning</p>
 
-      <div class="info-boxes">
-        <div class="info-box">
-          <span class="info-number">10</span>
-          <span class="info-label">Questions</span>
+      <div class="tabs">
+        <button id="tab-login" class="tab active">Login</button>
+        <button id="tab-register" class="tab">Register</button>
+      </div>
+
+      <div id="name-field" class="field hidden">
+        <label for="full-name">Full Name</label>
+        <input type="text" id="full-name" maxlength="30" placeholder="e.g. Rahul Sharma">
+      </div>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" maxlength="15" placeholder="3 to 15 letters, numbers or _" autocomplete="username">
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" maxlength="30" placeholder="At least 4 characters" autocomplete="current-password">
+      </div>
+
+      <label class="show-pass">
+        <input type="checkbox" id="show-password"> Show password
+      </label>
+
+      <p id="auth-error" class="error-text"></p>
+      <button id="auth-btn" class="btn btn-primary">Login</button>
+      <p class="note">Demo project: accounts are saved only in this browser.</p>
+    </section>
+
+    <!-- ========== SCREEN 2: MAIN APP (navbar + pages) ========== -->
+    <section id="app-screen" class="screen hidden">
+
+      <nav class="navbar">
+        <div class="nav-brand">🎓 QuizMaster</div>
+        <div class="nav-links">
+          <button class="nav-btn active" data-view="dashboard-view">🏠 Dashboard</button>
+          <button class="nav-btn" data-view="courses-view">📚 Courses</button>
+          <button class="nav-btn" data-view="analytics-view">📊 Analytics</button>
+          <button class="nav-btn" data-view="profile-view">👤 Profile</button>
         </div>
-        <div class="info-box">
-          <span class="info-number">15s</span>
-          <span class="info-label">Per Question</span>
+        <div class="nav-actions">
+          <button id="theme-btn" class="icon-btn" title="Switch theme">🌙</button>
+          <button id="logout-btn" class="icon-btn" title="Logout">Logout</button>
         </div>
-        <div class="info-box">
-          <span class="info-number">4</span>
-          <span class="info-label">Options Each</span>
+      </nav>
+
+      <!-- Dashboard page -->
+      <div id="dashboard-view" class="view card">
+        <h2 id="welcome-text" class="view-title">Welcome</h2>
+        <p class="subtitle">Here is your learning summary</p>
+
+        <div class="info-boxes">
+          <div class="info-box">
+            <span id="stat-attempts" class="info-number">0</span>
+            <span class="info-label">Attempts</span>
+          </div>
+          <div class="info-box">
+            <span id="stat-best" class="info-number">0%</span>
+            <span class="info-label">Best Score</span>
+          </div>
+          <div class="info-box">
+            <span id="stat-average" class="info-number">0%</span>
+            <span class="info-label">Average</span>
+          </div>
+          <div class="info-box">
+            <span id="stat-last" class="info-number">0%</span>
+            <span class="info-label">Last Score</span>
+          </div>
+        </div>
+
+        <h3 class="section-title">Recent Attempts</h3>
+        <p id="no-history" class="no-history">No attempts yet. Pick a course and take your first quiz!</p>
+        <ul id="history-list" class="history-list"></ul>
+
+        <div class="button-row">
+          <button id="goto-courses-btn" class="btn btn-primary">Choose a Course</button>
+          <button id="random-btn" class="btn btn-secondary">🎲 Surprise Me</button>
         </div>
       </div>
 
-      <button id="start-btn" class="btn btn-primary">Start Quiz</button>
+      <!-- Courses page -->
+      <div id="courses-view" class="view card hidden">
+        <h2 class="view-title">Choose a Course</h2>
+        <p class="subtitle">Click a course card to start the quiz</p>
+        <div id="course-grid" class="course-grid"></div>
+      </div>
+
+      <!-- Analytics page -->
+      <div id="analytics-view" class="view card hidden">
+        <div class="view-header">
+          <h2 class="view-title">Analytics</h2>
+          <select id="course-filter" class="select"></select>
+        </div>
+        <p class="subtitle">Hover over bars and dots to see details</p>
+
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3>📊 Bar Chart: Recent Scores</h3>
+            <div id="bar-chart" class="bar-chart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>📈 Line Chart: Score Trend</h3>
+            <div id="line-chart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>🍩 Doughnut: Answer Types</h3>
+            <div id="doughnut-chart"></div>
+          </div>
+          <div class="chart-card">
+            <h3>🎯 Course-wise Average (all courses)</h3>
+            <div id="course-chart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile page -->
+      <div id="profile-view" class="view card hidden">
+        <div class="profile-header">
+          <div id="profile-avatar" class="avatar big">?</div>
+          <div>
+            <h2 id="profile-name" class="view-title">Name</h2>
+            <p id="profile-username" class="muted-text"></p>
+            <p id="profile-joined" class="muted-text"></p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="edit-name">Change your full name</label>
+          <input type="text" id="edit-name" maxlength="30">
+        </div>
+        <button id="save-name-btn" class="btn btn-primary">Save Name</button>
+
+        <h3 class="section-title badge-title">Achievements</h3>
+        <div id="badge-grid" class="badge-grid"></div>
+      </div>
+
     </section>
 
-    <!-- ========== SCREEN 2: QUIZ ========== -->
-    <section id="quiz-screen" class="screen card hidden">
+    <!-- ========== SCREEN 3: QUIZ ========== -->
+    <section id="quiz-screen" class="screen card narrow hidden">
+
+      <div class="quiz-top">
+        <button id="quit-btn" class="link-btn">← Quit</button>
+        <span id="quiz-course" class="course-tag">Course</span>
+        <span id="streak" class="streak">🔥 0</span>
+      </div>
 
       <div class="quiz-header">
-        <span id="question-number" class="question-number">Question 1 of 10</span>
+        <span id="question-number" class="question-number">Question 1 of 8</span>
         <span id="timer" class="timer">⏱ 15</span>
       </div>
 
@@ -55,13 +184,18 @@
         <button class="option-btn" data-index="3"></button>
       </div>
 
-      <button id="next-btn" class="btn btn-primary" disabled>Next Question</button>
+      <div class="button-row">
+        <button id="fifty-btn" class="btn btn-secondary">✂ 50:50</button>
+        <button id="next-btn" class="btn btn-primary" disabled>Next Question</button>
+      </div>
+      <p class="hint">Tip: press 1 to 4 (or A to D) to answer, and Enter for the next question.</p>
     </section>
 
-    <!-- ========== SCREEN 3: RESULT ========== -->
-    <section id="result-screen" class="screen card hidden">
+    <!-- ========== SCREEN 4: RESULT ========== -->
+    <section id="result-screen" class="screen card narrow hidden">
       <div class="logo">🏆</div>
       <h1>Quiz Completed!</h1>
+      <p id="result-course" class="course-tag">Course</p>
       <p id="result-message" class="subtitle">Well done!</p>
 
       <div class="score-circle">
@@ -69,7 +203,7 @@
       </div>
 
       <p class="final-score">
-        Final Score: <strong id="final-score">0</strong> / <strong id="total-questions">10</strong>
+        Final Score: <strong id="final-score">0</strong> / <strong id="total-questions">8</strong>
       </p>
 
       <div class="info-boxes">
@@ -81,14 +215,24 @@
           <span id="wrong-count" class="info-number">0</span>
           <span class="info-label">Wrong</span>
         </div>
+        <div class="info-box">
+          <span id="skipped-count" class="info-number">0</span>
+          <span class="info-label">Skipped</span>
+        </div>
       </div>
 
-      <button id="restart-btn" class="btn btn-primary">Restart Quiz</button>
+      <div class="button-row">
+        <button id="restart-btn" class="btn btn-primary">Restart Quiz</button>
+        <button id="review-btn" class="btn btn-secondary">Review Answers</button>
+        <button id="home-btn" class="btn btn-secondary">Back to Dashboard</button>
+      </div>
+
+      <ul id="review-list" class="review-list hidden"></ul>
     </section>
 
   </div>
 
-   <script src="quizLogic.js"></script>
+  <script src="quizLogic.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
